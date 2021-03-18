@@ -71,17 +71,6 @@ io.on("connection", (socket) => {
 	  values: [socket.userID],
 	};
 
-	let datas = [];
-
-  client.query(query, (err, res) => {
-	  if (err) throw err;
-	  datas = res.rows;
-	  for (let row of res.rows) {
-	    console.log(JSON.stringify(row));
-	  }
-	  client.end();
-	});
-
   console.log("datas", datas);
 
   console.log("User connected");
@@ -109,15 +98,25 @@ io.on("connection", (socket) => {
       messagesPerUser.set(otherUser, [message]);
     }
   });
-  sessionStore.findAllSessions().forEach((session) => {
-    users.push({
-      userID: session.userID,
-      username: session.username,
-      connected: session.connected,
-      messages: messagesPerUser.get(session.userID) || [],
-      datas: datas
-    });
-  });
+  
+  client.query(query, (err, res) => {
+	  if (err) throw err;
+	  datas = res.rows;
+		sessionStore.findAllSessions().forEach((session) => {
+			users.push({
+			  userID: session.userID,
+			  username: session.username,
+			  connected: session.connected,
+			  messages: messagesPerUser.get(session.userID) || [],
+			  datas: res.rows
+			});
+		});
+	  // for (let row of res.rows) {
+	  //   console.log(JSON.stringify(row));
+	  // }
+	  client.end();
+	});
+ 
   socket.emit("users", users);
 
   console.log(users);
