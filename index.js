@@ -5,7 +5,7 @@ const app = express();
 const http = require('http').Server(app);
 const io = require("socket.io")(http, {
   cors: {
-    origin: "http://localhost",
+    origin: "*",
     methods: ["GET", "POST"],
     credentials: true
   }
@@ -98,7 +98,7 @@ io.on("connection", (socket) => {
       messagesPerUser.set(otherUser, [message]);
     }
   });
-  
+
   client.query(query, (err, res) => {
 	  if (err) throw err;
 	  datas = res.rows;
