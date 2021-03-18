@@ -71,10 +71,11 @@ io.on("connection", (socket) => {
 	  values: [socket.userID],
 	}
 
-	let datas = [];
+	const datas = [];
 
   client.query(query, (err, res) => {
 	  if (err) throw err;
+	  console.log(res.rows);
 	  for (let row of res.rows) {
 	    console.log(JSON.stringify(row));
 	    datas.push(row);
