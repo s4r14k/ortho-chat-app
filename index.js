@@ -71,17 +71,15 @@ io.on("connection", (socket) => {
 	  values: [socket.userID],
 	}
 
-	let data = [];
+	let datas = [];
 
   client.query(query, (err, res) => {
 	  if (err) throw err;
 	  for (let row of res.rows) {
-	    data.push(JSON.stringify(row));
+	    console.log(JSON.stringify(row));
 	  }
 	  client.end();
 	});
-
-	console.log("datas", data);
 
 
   console.log("User connected");
