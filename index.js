@@ -64,7 +64,14 @@ io.on("connection", (socket) => {
     connected: true,
   });
 
-  client.query('SELECT * FROM ortho.chat;', (err, res) => {
+  const query = {
+	  // give the query a unique name
+	  name: 'fetch-user',
+	  text: 'SELECT * FROM ortho.chat where id_to = $1 or id_from = $1',
+	  values: [socket.userID],
+	}
+
+  client.query(query, (err, res) => {
 	  if (err) throw err;
 	  for (let row of res.rows) {
 	    console.log(JSON.stringify(row));
