@@ -23,6 +23,8 @@ const client = new Client({
 
 client.connect();
 
+const datas = [];
+
 const crypto = require("crypto");
 const randomId = () => crypto.randomBytes(8).toString("hex");
 
@@ -71,14 +73,11 @@ io.on("connection", (socket) => {
 	  values: [socket.userID],
 	}
 
-	const datas = [];
-
   client.query(query, (err, res) => {
 	  if (err) throw err;
-	  console.log(res.rows);
+	  datas = res.rows;
 	  for (let row of res.rows) {
 	    console.log(JSON.stringify(row));
-	    datas.push(row);
 	  }
 	  client.end();
 	});
