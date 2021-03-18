@@ -1,11 +1,23 @@
 'use strict';
 
 const express = require('express');
-const socketIO = require('socket.io');
-const app = express ();
+const app = express();
+const http = require('http').Server(app);
+const io = require("socket.io")(http, {
+  cors: {
+    origin: "http://localhost",
+    methods: ["GET", "POST"],
+    credentials: true
+  }
+});
+
 
 const PORT = process.env.PORT || 3000;
 const INDEX = '/index.html';
+
+app.get('/', function(req, res) {
+   res.sendFile('index.html');
+});
 
 const { Client } = require('pg');
 
@@ -28,11 +40,25 @@ const { Client } = require('pg');
 
 app.use(express.static(__dirname + '/public'));
 
-const server = express()
-  .use((req, res) => res.sendFile(INDEX, { root: __dirname }))
-  .listen(PORT, () => console.log(`Listening on ${PORT}`));
+// Add headers
+app.use(function (req, res, next) {
 
-const io = socketIO(server);
+  // Website you wish to allow to connect
+  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:8888');
+
+  // Request methods you wish to allow
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+
+  // Request headers you wish to allow
+  res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type');
+
+  // Set to true if you need the website to include cookies in the requests sent
+  // to the API (e.g. in case you use sessions)
+  res.setHeader('Access-Control-Allow-Credentials', true);
+
+  // Pass to next layer of middleware
+  next();
+});
 
 io.on('connection', (socket) => {
   console.log('Client connected');
@@ -42,4 +68,6 @@ io.on('connection', (socket) => {
   });
 });
 
-setInterval(() => io.emit('time', new Date().toTimeString()), 1000);
+http.listen(3000, () => {
+	console.log("app dispo sur localhost:3000")
+});
