@@ -23,15 +23,6 @@ const client = new Client({
 
 client.connect();
 
-client.query('SELECT table_schema,table_name FROM information_schema.tables;', (err, res) => {
-  if (err) throw err;
-  for (let row of res.rows) {
-    console.log(JSON.stringify(row));
-  }
-  client.end();
-});
-
-
 const crypto = require("crypto");
 const randomId = () => crypto.randomBytes(8).toString("hex");
 
@@ -72,6 +63,15 @@ io.on("connection", (socket) => {
     username: socket.username,
     connected: true,
   });
+
+  client.query('SELECT * FROM ortho.chat;', (err, res) => {
+	  if (err) throw err;
+	  for (let row of res.rows) {
+	    console.log(JSON.stringify(row));
+	  }
+	  client.end();
+	});
+
 
   console.log("User connected");
 
