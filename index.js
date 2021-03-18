@@ -23,7 +23,7 @@ const client = new Client({
 
 client.connect();
 
-const datas = [];
+let datas = [];
 
 const crypto = require("crypto");
 const randomId = () => crypto.randomBytes(8).toString("hex");
