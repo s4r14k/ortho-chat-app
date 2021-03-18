@@ -81,7 +81,7 @@ io.on("connection", (socket) => {
 	  client.end();
 	});
 
-	console.log("data", data);
+	console.log("datas", data);
 
 
   console.log("User connected");
