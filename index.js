@@ -77,10 +77,12 @@ io.on("connection", (socket) => {
 	  if (err) throw err;
 	  for (let row of res.rows) {
 	    console.log(JSON.stringify(row));
+	    datas.push(row);
 	  }
 	  client.end();
 	});
 
+  console.log("datas", datas);
 
   console.log("User connected");
 
