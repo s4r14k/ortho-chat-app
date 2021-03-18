@@ -23,8 +23,6 @@ const client = new Client({
 
 client.connect();
 
-let datas = [];
-
 const crypto = require("crypto");
 const randomId = () => crypto.randomBytes(8).toString("hex");
 
@@ -71,7 +69,9 @@ io.on("connection", (socket) => {
 	  name: 'fetch-user',
 	  text: 'SELECT * FROM ortho.chat where id_to = $1 or id_from = $1',
 	  values: [socket.userID],
-	}
+	};
+
+	let datas = [];
 
   client.query(query, (err, res) => {
 	  if (err) throw err;
@@ -115,6 +115,7 @@ io.on("connection", (socket) => {
       username: session.username,
       connected: session.connected,
       messages: messagesPerUser.get(session.userID) || [],
+      datas: datas
     });
   });
   socket.emit("users", users);
@@ -127,6 +128,7 @@ io.on("connection", (socket) => {
     username: socket.username,
     connected: true,
     messages: [],
+    datas: datas
   });
 
   // forward the private message to the right recipient (and to other tabs of the sender)
