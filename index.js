@@ -5,14 +5,16 @@ const app = express();
 const http = require('http').Server(app);
 const io = require("socket.io")(http, {
   cors: {
-    origin: "*",
+    origin: "http://localhost",
     methods: ["GET", "POST"],
     credentials: true
   }
 });
 
 // Database
-const { Client } = require('pg');
+const {
+  Client
+} = require('pg');
 
 const client = new Client({
   connectionString: process.env.DATABASE_URL,
@@ -26,14 +28,18 @@ client.connect();
 const crypto = require("crypto");
 const randomId = () => crypto.randomBytes(8).toString("hex");
 
-const { InMemorySessionStore } = require("./sessionStore");
+const {
+  InMemorySessionStore
+} = require("./sessionStore");
 const sessionStore = new InMemorySessionStore();
 
-const { InMemoryMessageStore } = require("./messageStore");
+const {
+  InMemoryMessageStore
+} = require("./messageStore");
 const messageStore = new InMemoryMessageStore();
 
 io.use((socket, next) => {
-	const sessionID = socket.handshake.auth.sessionID;
+  const sessionID = socket.handshake.auth.sessionID;
   if (sessionID) {
     // find existing session
     const session = sessionStore.findSession(sessionID);
@@ -65,11 +71,27 @@ io.on("connection", (socket) => {
   });
 
   const query = {
-	  // give the query a unique name
-	  name: 'fetch-user',
-	  text: 'SELECT * FROM ortho.chat where id_to = $1 or id_from = $1',
-	  values: [socket.userID],
-	};
+    // give the query a unique name
+    name: 'fetch-user',
+    text: 'SELECT * FROM ortho.chat where id_to = $1 or id_from = $1',
+    values: [socket.userID],
+  };
+
+  let datas = [];
+
+  // client.query(query, (err, res) => {
+  //   if (err) throw err;
+  //   await datas = res.rows;
+  //   // for (let row of res.rows) {
+  //   //   console.log(JSON.stringify(row));
+  //   // }
+  //   client.end();
+  // });
+
+  client
+  .query(query)
+  .then(res => datas = res.rows[0])
+  .catch(e => console.error(e.stack))
 
   console.log("datas", datas);
 
@@ -90,7 +112,10 @@ io.on("connection", (socket) => {
   const users = [];
   const messagesPerUser = new Map();
   messageStore.findMessagesForUser(socket.userID).forEach((message) => {
-    const { from, to } = message;
+    const {
+      from,
+      to
+    } = message;
     const otherUser = socket.userID === from ? to : from;
     if (messagesPerUser.has(otherUser)) {
       messagesPerUser.get(otherUser).push(message);
@@ -98,25 +123,15 @@ io.on("connection", (socket) => {
       messagesPerUser.set(otherUser, [message]);
     }
   });
-
-  client.query(query, (err, res) => {
-	  if (err) throw err;
-	  datas = res.rows;
-		sessionStore.findAllSessions().forEach((session) => {
-			users.push({
-			  userID: session.userID,
-			  username: session.username,
-			  connected: session.connected,
-			  messages: messagesPerUser.get(session.userID) || [],
-			  datas: res.rows
-			});
-		});
-	  // for (let row of res.rows) {
-	  //   console.log(JSON.stringify(row));
-	  // }
-	  client.end();
-	});
- 
+  sessionStore.findAllSessions().forEach((session) => {
+    users.push({
+      userID: session.userID,
+      username: session.username,
+      connected: session.connected,
+      messages: messagesPerUser.get(session.userID) || [],
+      datas: datas
+    });
+  });
   socket.emit("users", users);
 
   console.log(users);
@@ -131,7 +146,10 @@ io.on("connection", (socket) => {
   });
 
   // forward the private message to the right recipient (and to other tabs of the sender)
-  socket.on("private message", ({ content, to }) => {
+  socket.on("private message", ({
+    content,
+    to
+  }) => {
     const message = {
       content,
       from: socket.userID,
