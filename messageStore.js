@@ -13,6 +13,12 @@ class InMemoryMessageStore extends MessageStore {
     this.messages.push(message);
   }
 
+  find(userID) {
+    return this.messages.find(
+      ({ from, to }) => from === userID || to === userID
+    );
+  }
+
   findMessagesForUser(userID) {
     return this.messages.filter(
       ({ from, to }) => from === userID || to === userID

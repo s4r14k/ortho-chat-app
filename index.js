@@ -1,6 +1,8 @@
 'use strict';
 
+require("dotenv").config();
 const express = require('express');
+const cors = require("cors");
 const app = express();
 const http = require('http').Server(app);
 const io = require("socket.io")(http, {
@@ -10,19 +12,14 @@ const io = require("socket.io")(http, {
     credentials: true
   }
 });
-
-// Database
 const {
-  Client
-} = require('pg');
+  MongoClient
+} = require("mongodb");
 
-const client = new Client({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  }
+const client = new MongoClient(process.env.ATLAS_URI, {
+  useUnifiedTopology: true
 });
-
+let collection = null;
 client.connect();
 
 const crypto = require("crypto");
@@ -37,6 +34,32 @@ const {
   InMemoryMessageStore
 } = require("./messageStore");
 const messageStore = new InMemoryMessageStore();
+
+app.use(cors());
+
+app.get('/message/:id', (req, res) => {
+  let query = {};
+
+  if (Number(req.params.id) !== 1) {
+    query = {
+      $or: [{
+        to: Number(req.params.id)
+      }, {
+        from: Number(req.params.id)
+      }]
+    }
+  }
+
+  collection = client.db("ortho").collection("chat");
+
+  collection.find(query).toArray()
+  .then((data) => {
+    data.forEach(element => {
+      messageStore.saveMessage(element);
+    });
+    return res.json(data);
+  });
+});
 
 io.use((socket, next) => {
   const sessionID = socket.handshake.auth.sessionID;
@@ -70,23 +93,6 @@ io.on("connection", (socket) => {
     connected: true,
   });
 
-  const query = {
-    // give the query a unique name
-    name: 'fetch-user',
-    text: 'SELECT * FROM ortho.chat where id_to = $1 or id_from = $1',
-    values: [socket.userID],
-  };
-
-  const datas = client.query(query, (err, res) => {
-    if (err) throw err;
-    return res.rows;
-    // for (let row of res.rows) {
-    //   console.log(JSON.stringify(row));
-    // }
-  });
-
-  console.log("User connected");
-
   // emit session details
   socket.emit("session", {
     sessionID: socket.sessionID,
@@ -113,17 +119,17 @@ io.on("connection", (socket) => {
       messagesPerUser.set(otherUser, [message]);
     }
   });
+
   sessionStore.findAllSessions().forEach((session) => {
     users.push({
       userID: session.userID,
       username: session.username,
       connected: session.connected,
       messages: messagesPerUser.get(session.userID) || [],
-      datas: datas
     });
   });
-  socket.emit("users", users);
 
+  socket.emit("users", users);
   console.log(users);
 
   // notify existing users
@@ -131,9 +137,9 @@ io.on("connection", (socket) => {
     userID: socket.userID,
     username: socket.username,
     connected: true,
-    messages: [],
-    datas: datas
+    messages: messageStore.findMessagesForUser(socket.userID)
   });
+
 
   // forward the private message to the right recipient (and to other tabs of the sender)
   socket.on("private message", ({
@@ -146,6 +152,11 @@ io.on("connection", (socket) => {
       to,
     };
     socket.to(to).to(socket.userID).emit("private message", message);
+    collection.insertOne({
+      to: Number(to),
+      from: Number(socket.userID),
+      content: content
+    });
     messageStore.saveMessage(message);
   });
 
@@ -170,6 +181,6 @@ io.on("connection", (socket) => {
 
 const PORT = process.env.PORT || 3000;
 
-http.listen(PORT, () =>
-  console.log(`server listening at http://localhost:${PORT}`)
-);
+http.listen(PORT, () => {
+  console.log("Listening on port :%s...", http.address().port);
+});
