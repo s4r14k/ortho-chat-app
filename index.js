@@ -38,6 +38,12 @@ const {
 } = require("./messageStore");
 const messageStore = new InMemoryMessageStore();
 
+const removeDuplicates = (data, key) => {
+  return [
+    ...new Map(data.map(item => [key(item), item])).values()
+  ]
+};
+
 app.use(cors());
 
 app.get('/message/:id', (req, res) => {
@@ -56,13 +62,15 @@ app.get('/message/:id', (req, res) => {
   collection = client.db("ortho").collection("chat");
 
   collection.find(query).toArray()
-  .catch(error => { throw error})
-  .then((data) => {
-    data.forEach(element => {
-      messageStore.saveMessage(element);
+    .catch(error => {
+      throw error
+    })
+    .then((data) => {
+      data.forEach(element => {
+        messageStore.saveMessage(element);
+      });
+      return res.json(data);
     });
-    return res.json(data);
-  });
 });
 
 io.use((socket, next) => {
@@ -133,7 +141,8 @@ io.on("connection", (socket) => {
     });
   });
 
-  socket.emit("users", users);
+
+  socket.emit("users", removeDuplicates(users, item => item.userID));
   console.log(users);
 
   // notify existing users
