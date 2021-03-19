@@ -22,7 +22,7 @@ const client = new MongoClient(process.env.ATLAS_URI, {
 let collection = null;
 client.connect((err, data) => {
   if (err) throw err;
-  console.log("data connected");
+  console.log("data connected !");
 });
 
 const crypto = require("crypto");
