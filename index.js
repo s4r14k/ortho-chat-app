@@ -7,7 +7,7 @@ const app = express();
 const http = require('http').Server(app);
 const io = require("socket.io")(http, {
   cors: {
-    origin: "https://balamer.fr",
+    origin: "http://balamer.fr",
     methods: ["GET", "POST"],
     credentials: true
   }
@@ -20,7 +20,10 @@ const client = new MongoClient(process.env.ATLAS_URI, {
   useUnifiedTopology: true
 });
 let collection = null;
-client.connect();
+client.connect((err, data) => {
+  if (err) throw err;
+  console.log("data connected");
+});
 
 const crypto = require("crypto");
 const randomId = () => crypto.randomBytes(8).toString("hex");
@@ -53,6 +56,7 @@ app.get('/message/:id', (req, res) => {
   collection = client.db("ortho").collection("chat");
 
   collection.find(query).toArray()
+  .catch(error => { throw error})
   .then((data) => {
     data.forEach(element => {
       messageStore.saveMessage(element);
