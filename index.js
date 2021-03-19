@@ -77,21 +77,13 @@ io.on("connection", (socket) => {
     values: [socket.userID],
   };
 
-  let datas = [];
-
-  // client.query(query, (err, res) => {
-  //   if (err) throw err;
-  //   await datas = res.rows;
-  //   // for (let row of res.rows) {
-  //   //   console.log(JSON.stringify(row));
-  //   // }
-  //   client.end();
-  // });
-
-  client
-  .query(query)
-  .then(res => datas = res.rows[0])
-  .catch(e => console.error(e.stack))
+  const data = client.query(query, (err, res) => {
+    if (err) throw err;
+    return res.rows;
+    // for (let row of res.rows) {
+    //   console.log(JSON.stringify(row));
+    // }
+  });
 
   console.log("datas", datas);
 
