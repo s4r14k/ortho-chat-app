@@ -163,12 +163,14 @@ io.on("connection", (socket) => {
       content,
       from: socket.userID,
       to,
+      date_sent: new Date()
     };
     socket.to(to).to(socket.userID).emit("private message", message);
     collection.insertOne({
       to: Number(to),
       from: Number(socket.userID),
-      content: content
+      content: content,
+      date_sent: new Date()
     });
     messageStore.saveMessage(message);
   });
