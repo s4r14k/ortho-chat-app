@@ -7,7 +7,7 @@ const app = express();
 const http = require('http').Server(app);
 const io = require("socket.io")(http, {
   cors: {
-    origin: "https://balamer.fr",
+    origin: "http://fugieuf.cluster028.hosting.ovh.net",
     methods: ["GET", "POST"],
     credentials: true
   }
